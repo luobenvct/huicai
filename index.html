@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
+	<meta name="screen-orientation" content="portrait"/>
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="format-detection" content="telephone=no">
+	<meta name="full-screen" content="yes">
+	<title>惠财</title>
+	<link rel="stylesheet" href="https://static.88huicai.com/huicai/resource/swiper/swiper-4.1.0.min.css">
+	<script src="https://static.88huicai.com/huicai/resource/credit2go/js/jquery-2.1.4.min.js"></script>
+	<script src='https://static.88huicai.com/huicai/resource/swiper/swiper-4.1.0.min.js'></script>
+	<style type="text/css">
+		*{
+			-webkit-touch-callout:none;  /*系统默认菜单被禁用*/
+			-webkit-user-select:none; /*webkit浏览器*/
+			-khtml-user-select:none; /*早期浏览器*/
+			-moz-user-select:none;/*火狐*/
+			-ms-user-select:none; /*IE10*/
+			user-select:none;
+		}
+		input,textarea {
+			-webkit-user-select:auto; /*webkit浏览器*/
+			margin: 0px;
+			padding: 0px;
+			outline: none;
+		}
+		#app{
+			overflow: hidden;
+		}
+	</style>
+	
+  </head>
+  <body>
+	<div id="app"></div>
+	<!-- built files will be auto injected -->
+  <script>
+	var _hmt = _hmt || [];
+	(function() {
+	  var hm = document.createElement("script");
+	  hm.src = "https://hm.baidu.com/hm.js?c683e8bb826de94a6211d3dab1ff365f";
+	  var s = document.getElementsByTagName("script")[0]; 
+	  s.parentNode.insertBefore(hm, s);
+	})();
+  </script>
+  <script src="https://res.wx.qq.com/open/js/jweixin-1.2.0.js"></script>
+  <script src="https://static.88huicai.com/huicai/resource/vue/axios.min.js"></script>
+  
+  <script type=text/javascript>
+  	function vueurlFun(name){
+		var url = window.location.toString();
+		var arr = url.split("?") ||'';
+		if(arr.length>1){
+			var arrUrl = arr[1].split("&");
+			var listnum = [];
+			arrUrl.forEach(function(item){
+				listnum.push(item.split("="))
+			})
+			var text ='';
+			for (var i = 0; i < listnum.length; i++) {
+				if(listnum[i][0]==name){
+					text = listnum[i][1]				
+				}
+
+			}
+			return text;　
+		}
+	}
+	var params = unparam(decodeURI(decodeURI(location.search.substring(1))));
+
+	/*  */
+			/* 添加sessionstorage*/
+				 function setStorage(name,obj){
+					var str = JSON.stringify(obj);
+					sessionStorage.setItem(name, str)
+				}
+				/* 获取sessionstorage*/
+				 function getStorage(name,obj){
+					if(obj==''||obj==null){
+						return eval(sessionStorage.getItem(name)) || '';
+					}else{
+						var cont = JSON.parse(sessionStorage.getItem(name))|| '';
+						if (cont !=''){
+							return cont[obj]
+						}else{
+							return;
+						}
+
+					}
+
+				}
+			/*  */
+
+			//alert(unparam(decodeURI(decodeURI(location.search.substring(1)))))
+			//获取用户的WeixinUserInfo，之后执行自动登录
+			//alert("code: " + params['code']);
+			var app_token = vueurlFun("app_token") || '';
+			if(app_token!=''){
+				console.log("不自动等登录")
+			}else{
+				console.log("自动等登录")
+				if(localStorage.getItem("openid") != null){
+					//alert("test");
+					//localStorage.removeItem("openid")
+					//alert(localStorage.getItem("openid"))
+					autoLoginWithOpenid(localStorage.getItem("openid"))
+				}else{
+					//alert("nolocalStorge1")
+					getWeixinUserInfo(params['code']);
+					//alert("nolocalStorge2")
+				}
+			}
+			
+			/* alert("qq02")
+			alert(localStorage.getItem("openid")) */
+			//获取用户的WeixinUserInfo，之后执行自动登录
+			//getWeixinUserInfo(params['code']);
+
+			function getWeixinUserInfo(code) {
+			  axios.get('https://m.88huicai.com/api/v2/weixin/huicailc/userinfo?code=' + code)
+			  .then(function(res) {
+				  //alert("yescode"+res.data);
+				  //alert(res.data.appId)
+				console.log(res);
+				sessionStorage.setItem('appId', res.data.appId);
+				sessionStorage.setItem('unionid', res.data.result.unionId);
+				sessionStorage.setItem('openid', res.data.result.openId);
+
+				autoLoginWithOpenid(res.data.result.openId);
+			  })
+			  .catch(function(res) {
+				  //alert("false"+res)
+				console.log(res);
+			  });
+			}
+
+			function autoLoginWithOpenid(openid) {
+				//alert('autoLoginWithOpenid:' + openid);
+			  axios.get('/api/v2/user/login_weixin_openid?openid=' + openid)
+			  .then(function(res) {
+				  //alert("自动登录")
+				  //alert(res)
+					if(res.data.code == "SUCCESS"){
+						  //this.$messagebox(res.data.msg,"登录");
+						  //store.commit('updateUserInfo', this.userInfo);
+						 //alert(res.data.us.sessionToken);
+						  setStorage("sessionToken",res.data.us.sessionToken);
+						  localStorage.setItem("weixinToken",res.data.us.sessionToken);
+						  setStorage("test",true);
+						  if(res.data.us.sessionToken != '' && localStorage.getItem("openid") == null){
+							  localStorage.setItem("openid",sessionStorage.getItem("openid"));
+							  //alert("登录成功设置openid")
+							  //alert(localStorage.getItem("openid"))
+						  }
+
+						  //this.setCookie("sessionToken",res.data.us.sessionToken);
+						  //this.setCookie("mobile",this.bankIdTrue(this.mobile));
+						   //("q请kk")
+						   // window.location.href = "http://88huicai.tunnel.qydev.com/huicai/front/mobile/dist/index.html#/home"
+						  window.location.href = "https://m.88huicai.com/huicai/front/mobile/dist/index.html#/home"
+
+						}
+			  })
+			  .catch(function(res) {
+				console.log(res);
+			  });
+			}
+
+			function unparam(str, sep) {
+			  if(typeof str !== 'string' || (str.trim().length === 0))
+				return {};
+			  var ret = {}, pairs = str.split(sep || '&'), pair, key, val, m, i = 0, len = pairs.length;
+			  for(; i < len; i++) {
+				pair = pairs[i].split('=');
+				key = decodeURIComponent(pair[0]);
+				// pair[1] 可能包含gbk编码中文, 而decodeURIComponent 仅能处理utf-8 编码中文
+				try {
+				  val = decode(pair[1]);
+				} catch(e) {
+				  val = pair[1] || '';
+				}
+				if((m = key.match(/^(\w+)\[\]$/)) && m[1]) {
+				  ret[m[1]] = ret[m[1]] || [];
+				  ret[m[1]].push(val);
+				} else {
+				  ret[key] = val;
+				}
+			  }
+			  return ret;
+			}
+			//console.log("testben")
+			//console.log(window.location.href)
+			//var url = window.location.href;
+			//console.log("testben")
+			/*https://static.88huicai.com/huicai/front/mobile/dist/index.html#/investdetail/1950dd42-bb35-4888-a43a-01cf7b773799*/
+			//微信jssdk
+			function weixin(){
+				var url01 = window.location.href;
+				console.log("微信分享")
+				console.log(url01)
+				//alert(url01)
+				axios.get('https://m.88huicai.com/api/v2/weixin/huicailc/jsapi_signature?url='+url01, {
+
+				})
+				.then(function(res){
+					console.log("微信jssdk");
+					//alert(res);
+					console.log("dddd")
+					console.log(res)
+					var signature = res.data.result;
+					//alert("微信签名")
+					//alert(signature)
+					wx.config({
+						debug: false,
+						appId: signature.appId,
+						timestamp: signature.timestamp,
+						nonceStr: signature.nonceStr,
+						signature: signature.signature,
+						jsApiList: [
+						'checkJsApi',
+						'onMenuShareTimeline',
+						'onMenuShareAppMessage',
+						'onMenuShareQQ',
+						'onMenuShareWeibo',
+						'onMenuShareQZone',
+						'scanQRCode'
+						]
+					});
+					wx.ready(function() {
+						//alert("微信JS SDK配置成功！");
+						var option = {
+							title : '惠财-高收益低门槛的短期投资理财平台',
+							link : url01,
+							imgUrl : 'https:\/\/static.88huicai.com/huicai/image/huicailogo.png',
+							desc : '要理财，上惠财！1-6个月投资期限自由灵活选择，最低100元起投，最高预期年化15%，帮您财富最大化增值。',
+							trigger : function(res) {
+								//alert('用户点击发送给朋友');
+							},
+							success : function() {
+								//alert('已分享');
+							},
+							cancel : function() {
+								//alert('已取消');
+							},
+							fail : function(res) {
+								//alert(JSON.stringify(res));
+							}
+						};
+						wx.onMenuShareTimeline(option);
+						wx.onMenuShareAppMessage(option);
+						wx.onMenuShareQQ(option);
+						wx.onMenuShareWeibo(option);
+						wx.onMenuShareQZone(option);
+					});
+					wx.error(function(res){
+						//alert("微信JS SDK配置错误！");
+				  		// config信息验证失败会执行error函数，如签名过期导致验证失败，具体错误信息可以打开config的debug模式查看，也可以在返回的res参数中查看，对于SPA可以在这里更新签名。
+					});
+				})
+				.catch(function(res) {
+					console.log(res);
+				});
+			}
+			weixin();
+
+
+			    /* 定时触发方法 */
+			    function toNumber(value) {
+			    	if (typeof value == 'number') {
+			    		return value;
+			    	}
+			    	if (isSymbol(value)) {
+			    		return NAN;
+			    	}
+			    	if (isObject(value)) {
+			    		var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+			    		value = isObject(other) ? (other + '') : other;
+			    	}
+			    	if (typeof value != 'string') {
+			    		return value === 0 ? value : +value;
+			    	}
+			    	value = value.replace(reTrim, '');
+			    	var isBinary = reIsBinary.test(value);
+			    	return (isBinary || reIsOctal.test(value))
+			    	? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+			    	: (reIsBadHex.test(value) ? NAN : +value);
+			    }
+			    function isObject(value) {
+			    	var type = typeof value;
+			    	return value != null && (type == 'object' || type == 'function');
+			    }
+			    function debounce(func, wait, options) {
+			    	var lastArgs,
+			    	lastThis,
+			    	maxWait,
+			    	result,
+			    	timerId,
+			    	lastCallTime,
+			    	lastInvokeTime = 0,
+			    	leading = false,
+			    	maxing = false,
+			    	trailing = true;
+
+			    	if (typeof func != 'function') {
+			    		throw new TypeError(FUNC_ERROR_TEXT);
+			    	}
+			    	wait = toNumber(wait) || 0;
+			    	if (isObject(options)) {
+			    		leading = !!options.leading;
+			    		maxing = 'maxWait' in options;
+			    		maxWait = maxing ? nativeMax(toNumber(options.maxWait) || 0, wait) : maxWait;
+			    		trailing = 'trailing' in options ? !!options.trailing : trailing;
+			    	}
+
+			    	function invokeFunc(time) {
+			    		var args = lastArgs,
+			    		thisArg = lastThis;
+
+			    		lastArgs = lastThis = undefined;
+			    		lastInvokeTime = time;
+			    		result = func.apply(thisArg, args);
+			    		return result;
+			    	}
+
+			    	function leadingEdge(time) {
+		  // Reset any `maxWait` timer.
+		  lastInvokeTime = time;
+		  // Start the timer for the trailing edge.
+		  timerId = setTimeout(timerExpired, wait);
+		  // Invoke the leading edge.
+		  return leading ? invokeFunc(time) : result;
+		}
+
+		function remainingWait(time) {
+			var timeSinceLastCall = time - lastCallTime,
+			timeSinceLastInvoke = time - lastInvokeTime,
+			result = wait - timeSinceLastCall;
+
+			return maxing ? nativeMin(result, maxWait - timeSinceLastInvoke) : result;
+		}
+
+		function shouldInvoke(time) {
+			var timeSinceLastCall = time - lastCallTime,
+			timeSinceLastInvoke = time - lastInvokeTime;
+
+		  // Either this is the first call, activity has stopped and we're at the
+		  // trailing edge, the system time has gone backwards and we're treating
+		  // it as the trailing edge, or we've hit the `maxWait` limit.
+		  return (lastCallTime === undefined || (timeSinceLastCall >= wait) ||
+		  	(timeSinceLastCall < 0) || (maxing && timeSinceLastInvoke >= maxWait));
+		}
+
+		function timerExpired() {
+			var time = new Date();
+			if (shouldInvoke(time)) {
+				return trailingEdge(time);
+			}
+		  // Restart the timer.
+		  timerId = setTimeout(timerExpired, remainingWait(time));
+		}
+
+		function trailingEdge(time) {
+			timerId = undefined;
+
+		  // Only invoke if we have `lastArgs` which means `func` has been
+		  // debounced at least once.
+		  if (trailing && lastArgs) {
+		  	return invokeFunc(time);
+		  }
+		  lastArgs = lastThis = undefined;
+		  return result;
+		}
+
+		function cancel() {
+			if (timerId !== undefined) {
+				clearTimeout(timerId);
+			}
+			lastInvokeTime = 0;
+			lastArgs = lastCallTime = lastThis = timerId = undefined;
+		}
+
+		function flush() {
+			return timerId === undefined ? result : trailingEdge(new Date());
+		}
+
+		function debounced() {
+			var time = new Date(),
+			isInvoking = shouldInvoke(time);
+
+			lastArgs = arguments;
+			lastThis = this;
+			lastCallTime = time;
+
+			if (isInvoking) {
+				if (timerId === undefined) {
+					return leadingEdge(lastCallTime);
+				}
+				if (maxing) {
+			  // Handle invocations in a tight loop.
+			  timerId = setTimeout(timerExpired, wait);
+			  return invokeFunc(lastCallTime);
+			}
+		}
+		if (timerId === undefined) {
+			timerId = setTimeout(timerExpired, wait);
+		}
+		return result;
+	}
+	debounced.cancel = cancel;
+	debounced.flush = flush;
+	return debounced;
+}
+
+function invokeFunc(time) {
+	var args = lastArgs,
+	thisArg = lastThis;
+
+	lastArgs = lastThis = undefined;
+	lastInvokeTime = time;
+	result = func.apply(thisArg, args);
+	return result;
+}
+
+function leadingEdge(time) {
+		// Reset any `maxWait` timer.
+		lastInvokeTime = time;
+		// Start the timer for the trailing edge.
+		timerId = setTimeout(timerExpired, wait);
+		// Invoke the leading edge.
+		return leading ? invokeFunc(time) : result;
+	}
+
+	function remainingWait(time) {
+		var timeSinceLastCall = time - lastCallTime,
+		timeSinceLastInvoke = time - lastInvokeTime,
+		result = wait - timeSinceLastCall;
+
+		return maxing ? nativeMin(result, maxWait - timeSinceLastInvoke) : result;
+	}
+
+	function shouldInvoke(time) {
+		var timeSinceLastCall = time - lastCallTime,
+		timeSinceLastInvoke = time - lastInvokeTime;
+
+		// Either this is the first call, activity has stopped and we're at the
+		// trailing edge, the system time has gone backwards and we're treating
+		// it as the trailing edge, or we've hit the `maxWait` limit.
+		return (lastCallTime === undefined || (timeSinceLastCall >= wait) ||
+			(timeSinceLastCall < 0) || (maxing && timeSinceLastInvoke >= maxWait));
+	}
+
+	function timerExpired() {
+		var time = new Date();
+		if (shouldInvoke(time)) {
+			return trailingEdge(time);
+		}
+		// Restart the timer.
+		timerId = setTimeout(timerExpired, remainingWait(time));
+	}
+
+	function trailingEdge(time) {
+		timerId = undefined;
+
+		// Only invoke if we have `lastArgs` which means `func` has been
+		// debounced at least once.
+		if (trailing && lastArgs) {
+			return invokeFunc(time);
+		}
+		lastArgs = lastThis = undefined;
+		return result;
+	}
+	/**/
+  </script>
+  </body>
+</html>
